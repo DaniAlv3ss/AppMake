@@ -1,0 +1,404 @@
+<script>
+// Desestruturação do Vue
+const { createApp, ref, reactive, computed, onMounted, nextTick, watch } = Vue;
+
+// Função wrapper para chamadas Google Script
+const runGoogle = (fnName, ...args) => {
+    return new Promise((resolve) => {
+        if (typeof google === 'undefined') {
+            console.log('Mock API Calling ' + fnName, args);
+            // Simulações para teste local
+            if(fnName === 'deleteData') setTimeout(() => resolve(true), 500);
+            else if(fnName === 'updateData') setTimeout(() => resolve(args[2]), 500);
+            else setTimeout(() => resolve([]), 500);
+        } else {
+            google.script.run
+                .withSuccessHandler(resolve)
+                .withFailureHandler((err) => {
+                    console.error("Erro no Google Script:", err);
+                    resolve([]); 
+                })
+                [fnName](...args);
+        }
+    });
+};
+
+const api = {
+    getData: (table) => runGoogle('getData', table),
+    addData: (table, item) => runGoogle('addData', table, item),
+    updateData: (table, id, item) => runGoogle('updateData', table, id, item),
+    deleteData: (table, id) => runGoogle('deleteData', table, id)
+};
+
+const app = createApp({
+    setup() {
+        const loading = ref(true);
+        const view = ref('dashboard');
+        const sidebarOpen = ref(false);
+        const currentDate = ref(new Date());
+        const filters = reactive({ period: 'month' });
+        const apptFilter = ref('all');
+        const financialTab = ref('income');
+
+        const clients = ref([]);
+        const services = ref([]);
+        const rawAppts = ref([]);
+        const expenses = ref([]);
+
+        const modals = reactive({
+            appointment: { open: false, id: null },
+            payment: { open: false, appt: null },
+            client: { open: false },
+            service: { open: false }
+        });
+        
+        const apptForm = reactive({ clientId: '', batchItems: [] });
+        const paymentForm = reactive({ amount: '', date: '' });
+        const expenseForm = reactive({ description: '', amount: '', date: '', category: 'product' });
+        const simpleForm = reactive({});
+
+        const menuItems = [
+            { id: 'dashboard', icon: 'ri-dashboard-line', label: 'Visão Geral' },
+            { id: 'calendar', icon: 'ri-calendar-line', label: 'Agenda' },
+            { id: 'appointments', icon: 'ri-list-check', label: 'Todos Agendamentos' },
+            { id: 'financial', icon: 'ri-wallet-3-line', label: 'Financeiro' },
+            { id: 'clients', icon: 'ri-group-line', label: 'Clientes' },
+            { id: 'services', icon: 'ri-sparkling-line', label: 'Serviços' }
+        ];
+
+        // --- COMPUTEDS ---
+        const fullAppointments = computed(() => {
+            return rawAppts.value.map(a => ({
+                ...a,
+                client: clients.value.find(c => String(c.id) === String(a.clientId)) || { name: '?' },
+                service: services.value.find(s => String(s.id) === String(a.serviceId)) || { name: '?', price:0, color: 'bg-gray-100', duration:60 }
+            })).sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
+        });
+
+        const filteredAppointmentsList = computed(() => {
+            let list = fullAppointments.value;
+            if (apptFilter.value !== 'all') {
+                if (apptFilter.value === 'scheduled') list = list.filter(a => a.status === 'scheduled' || !a.status);
+                else list = list.filter(a => a.status === apptFilter.value);
+            }
+            return list.sort((a,b) => new Date(b.startTime) - new Date(a.startTime));
+        });
+
+        const dashboardStats = computed(() => {
+            const now = new Date();
+            let start = new Date();
+            
+            if (filters.period === 'month') start = new Date(now.getFullYear(), now.getMonth(), 1);
+            else if (filters.period === 'week') start.setDate(now.getDate() - 7);
+            else start.setHours(0,0,0,0); 
+
+            const activeAppts = fullAppointments.value.filter(a => a.status !== 'canceled');
+            const filtered = activeAppts.filter(a => new Date(a.startTime) >= start);
+            
+            const revenue = filtered.reduce((acc, c) => acc + Number(c.price), 0);
+            const expenseTotal = expenses.value.filter(e => new Date(e.date) >= start).reduce((acc, c) => acc + Number(c.amount), 0);
+            const pending = filtered.reduce((acc, c) => acc + (c.price - c.paidAmount), 0);
+
+            return { revenue, expenses: expenseTotal, profit: revenue - expenseTotal, count: filtered.length, pending };
+        });
+
+        const financialGroups = computed(() => {
+            const groups = {};
+            fullAppointments.value.filter(a => a.status !== 'canceled').forEach(a => {
+                const k = new Date(a.startTime).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                if(!groups[k]) groups[k] = { items: [], total: 0 };
+                groups[k].items.push(a);
+                groups[k].total += Number(a.price);
+            });
+            return groups;
+        });
+
+        const batchTotal = computed(() => apptForm.batchItems.reduce((acc, i) => acc + Number(i.price||0), 0));
+
+        const charts = computed(() => {
+            const daily = {};
+            fullAppointments.value.filter(a => a.status !== 'canceled').forEach(a => {
+                const d = a.startTime.split('T')[0];
+                daily[d] = (daily[d] || 0) + Number(a.price);
+            });
+            const sCounts = {};
+            fullAppointments.value.filter(a => a.status !== 'canceled').forEach(a => {
+                sCounts[a.service.name] = (sCounts[a.service.name] || 0) + 1;
+            });
+
+            return {
+                revenueSeries: [{ name: 'Receita', data: Object.entries(daily).sort().map(([x,y]) => ({x,y})) }],
+                servicesSeries: [{ name: 'Qtd', data: Object.entries(sCounts).sort((a,b)=>b[1]-a[1]).map(([x,y]) => ({x,y})).slice(0,5) }]
+            };
+        });
+
+        const chartOptions = {
+            revenue: { chart: { type: 'area', toolbar:{show:false}, fontFamily:'Inter' }, colors:['#e11d48'], stroke:{curve:'smooth'}, xaxis:{type:'datetime'}, grid:{borderColor:'#f1f5f9'} },
+            services: { chart: { type: 'bar', toolbar:{show:false}, fontFamily:'Inter' }, colors:['#e11d48'], plotOptions:{bar:{horizontal:true, borderRadius:4}}, grid:{borderColor:'#f1f5f9'} }
+        };
+
+        const weekDays = computed(() => {
+            const start = new Date(currentDate.value);
+            const day = start.getDay();
+            const diff = start.getDate() - day + (day == 0 ? -6 : 1); 
+            start.setDate(diff); start.setHours(0,0,0,0);
+            return Array.from({length:7}, (_, i) => {
+                const d = new Date(start); d.setDate(d.getDate() + i); return d;
+            });
+        });
+        const hours = Array.from({length:13}, (_, i) => i + 8); 
+
+        // --- ACTIONS ---
+        const setPage = (p) => { view.value = p; sidebarOpen.value = false; };
+        const getPageTitle = () => menuItems.find(i => i.id === view.value)?.label;
+        const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+
+        const changeWeek = (dir) => {
+            const d = new Date(currentDate.value);
+            d.setDate(d.getDate() + (dir * 7));
+            currentDate.value = d;
+        };
+
+        const getApptsForDay = (date) => {
+            return fullAppointments.value.filter(a => {
+                const d = new Date(a.startTime);
+                return a.status !== 'canceled' && d.getDate() === date.getDate() && d.getMonth() === date.getMonth();
+            });
+        };
+
+        const getApptStyle = (appt) => {
+            const d = new Date(appt.startTime);
+            const startMin = (d.getHours() - 8) * 60 + d.getMinutes();
+            const top = (startMin / 60) * 96;
+            const height = (appt.service.duration / 60) * 96;
+            return { top: top + 'px', height: height + 'px' };
+        };
+
+        const openWhatsappReport = () => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayAppts = fullAppointments.value.filter(a => 
+                a.startTime.startsWith(todayStr) && a.status !== 'canceled'
+            ).sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
+
+            let text = '📅 *Agenda do Dia - ' + new Date().toLocaleDateString('pt-BR') + '*\n\n';
+            
+            if (todayAppts.length === 0) {
+                text += "Nenhum agendamento para hoje.";
+            } else {
+                todayAppts.forEach(a => {
+                    const time = new Date(a.startTime).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                    const valor = formatCurrency(a.price);
+                    const statusPag = a.paymentStatus === 'paid' ? 'Pago ✅' : 'Pendente ⚠️';
+                    
+                    text += '⏰ *' + time + '* - ' + a.client.name + '\n';
+                    text += '💄 ' + a.service.name + '\n';
+                    text += '💰 ' + valor + ' (' + statusPag + ')\n\n';
+                });
+                const total = todayAppts.reduce((sum, a) => sum + Number(a.price), 0);
+                text += '📊 *Total do dia:* ' + formatCurrency(total);
+            }
+
+            const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+            window.open(url, '_blank');
+        };
+
+        // --- CRUD AGENDAMENTOS ---
+        const openApptModal = (appt) => {
+            modals.appointment.open = true; modals.appointment.id = appt?.id;
+            apptForm.clientId = appt?.clientId || '';
+            if(appt) {
+                const d = new Date(appt.startTime);
+                apptForm.batchItems = [{
+                    serviceId: appt.serviceId, price: appt.price,
+                    date: d.toISOString().split('T')[0],
+                    time: d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+                }];
+            } else {
+                apptForm.batchItems = [{ serviceId:'', price:'', date: new Date().toISOString().split('T')[0], time: '09:00' }];
+            }
+        };
+
+        const addBatchItem = () => apptForm.batchItems.push({ serviceId:'', price:'', date: new Date().toISOString().split('T')[0], time: '09:00' });
+        
+        const updateBatchItemPrice = (item) => {
+            const s = services.value.find(x => x.id === item.serviceId);
+            if(s) item.price = s.price;
+        };
+
+        const saveBatchAppointment = async () => {
+            const promises = apptForm.batchItems.map((item, idx) => {
+                const s = services.value.find(x => x.id === item.serviceId);
+                if(!s) return null;
+                const start = item.date + 'T' + item.time;
+                const payload = {
+                    id: modals.appointment.id || ('appt-' + Date.now() + '-' + idx),
+                    clientId: apptForm.clientId, serviceId: item.serviceId,
+                    startTime: new Date(start).toISOString(),
+                    price: item.price, paidAmount: 0, paymentStatus: 'pending', 
+                    status: 'scheduled',
+                    transactions: []
+                };
+                
+                if(modals.appointment.id) {
+                    const i = rawAppts.value.findIndex(x => x.id === payload.id);
+                    if(i!==-1) {
+                        const old = rawAppts.value[i];
+                        payload.paidAmount = old.paidAmount;
+                        payload.paymentStatus = old.paymentStatus;
+                        payload.transactions = old.transactions;
+                        payload.status = old.status;
+                        rawAppts.value[i] = payload;
+                    }
+                    return api.updateData('agendamentos', payload.id, payload);
+                } else {
+                    rawAppts.value.push(payload);
+                    return api.addData('agendamentos', payload);
+                }
+            });
+            await Promise.all(promises);
+            modals.appointment.open = false;
+        };
+
+        const updateApptStatus = async (appt, newStatus) => {
+            const updated = { ...appt, status: newStatus };
+            const i = rawAppts.value.findIndex(x => x.id === appt.id);
+            if (i !== -1) rawAppts.value[i] = updated;
+            await api.updateData('agendamentos', appt.id, updated);
+        };
+
+        const deleteAppointment = async (id) => {
+            if(!confirm('Tem certeza que deseja excluir este agendamento permanentemente?')) return;
+            rawAppts.value = rawAppts.value.filter(a => a.id !== id);
+            await api.deleteData('agendamentos', id);
+        };
+
+        // --- CRUD PAGAMENTOS ---
+        const openPaymentModal = (appt) => {
+            modals.payment.open = true; modals.payment.appt = appt;
+            paymentForm.amount = ''; paymentForm.date = new Date().toISOString().split('T')[0];
+        };
+
+        const addTransaction = async () => {
+            const appt = modals.payment.appt;
+            const amount = Number(paymentForm.amount);
+            if(!amount) return;
+
+            const tx = { id: 'tx-' + Date.now(), amount, date: paymentForm.date };
+            const newTxs = [...(appt.transactions || []), tx];
+            const paid = newTxs.reduce((sum, t) => sum + Number(t.amount), 0);
+            
+            const updated = { 
+                ...appt, transactions: newTxs, paidAmount: paid,
+                paymentStatus: paid >= appt.price ? 'paid' : 'partial'
+            };
+
+            const idx = rawAppts.value.findIndex(a => a.id === appt.id);
+            if(idx !== -1) rawAppts.value[idx] = updated;
+            
+            await api.updateData('agendamentos', appt.id, updated);
+            modals.payment.appt = updated;
+            paymentForm.amount = '';
+        };
+
+        const deleteTransaction = async (txId) => {
+            const appt = modals.payment.appt;
+            const newTxs = appt.transactions.filter(t => t.id !== txId);
+            const paid = newTxs.reduce((sum, t) => sum + Number(t.amount), 0);
+            
+            const updated = { 
+                ...appt, transactions: newTxs, paidAmount: paid,
+                paymentStatus: paid >= appt.price ? 'paid' : 'partial'
+            };
+            
+            const idx = rawAppts.value.findIndex(a => a.id === appt.id);
+            if(idx !== -1) rawAppts.value[idx] = updated;
+            
+            await api.updateData('agendamentos', appt.id, updated);
+            modals.payment.appt = updated;
+        };
+
+        // --- CRUD CLIENTES/SERVIÇOS ---
+        const openClientModal = (c) => { modals.client.open = true; Object.assign(simpleForm, c.id ? c : {name:'', phone:''}); simpleForm.id = c.id; };
+        
+        const saveClient = async () => {
+            const p = { ...simpleForm, id: simpleForm.id || ('c-' + Date.now()) };
+            const i = clients.value.findIndex(x => x.id === p.id);
+            if(i!==-1) {
+                clients.value[i] = p;
+                await api.updateData('clientes', p.id, p);
+            } else {
+                clients.value.push(p);
+                await api.addData('clientes', p);
+            }
+            modals.client.open = false;
+        };
+
+        const deleteClient = async (id) => {
+            if(!confirm('Tem certeza que deseja excluir este cliente?')) return;
+            clients.value = clients.value.filter(c => c.id !== id);
+            await api.deleteData('clientes', id);
+        };
+
+        const openServiceModal = (s) => { modals.service.open = true; Object.assign(simpleForm, s.id ? s : {name:'', price:'', duration:60}); simpleForm.id = s.id; };
+        
+        const saveService = async () => {
+            const colors = ['bg-rose-100 border-rose-200 text-rose-700', 'bg-purple-100 border-purple-200 text-purple-700', 'bg-blue-100 border-blue-200 text-blue-700', 'bg-emerald-100 border-emerald-200 text-emerald-700'];
+            const existing = services.value.find(x => x.id === simpleForm.id);
+            const p = { 
+                ...simpleForm, 
+                id: simpleForm.id || ('s-' + Date.now()), 
+                color: existing?.color || colors[Math.floor(Math.random()*colors.length)] 
+            };
+            
+            const i = services.value.findIndex(x => x.id === p.id);
+            if(i!==-1) {
+                services.value[i] = p;
+                await api.updateData('servicos', p.id, p);
+            } else {
+                services.value.push(p);
+                await api.addData('servicos', p);
+            }
+            modals.service.open = false;
+        };
+
+        const deleteService = async (id) => {
+            if(!confirm('Tem certeza que deseja excluir este serviço?')) return;
+            services.value = services.value.filter(s => s.id !== id);
+            await api.deleteData('servicos', id);
+        };
+
+        const saveExpense = async () => {
+            const p = { ...expenseForm, id: 'e-' + Date.now() };
+            expenses.value.push(p);
+            expenseForm.description = ''; expenseForm.amount = '';
+            await api.addData('despesas', p);
+        };
+
+        onMounted(async () => {
+            try {
+                const [c, s, a, e] = await Promise.all([
+                    api.getData('clientes'), api.getData('servicos'), api.getData('agendamentos'), api.getData('despesas')
+                ]);
+                clients.value = c; services.value = s; rawAppts.value = a; expenses.value = e;
+            } catch(err) { console.error(err); } 
+            finally { loading.value = false; }
+        });
+
+        return {
+            loading, view, sidebarOpen, setPage, getPageTitle, menuItems,
+            dashboardStats, fullAppointments, filteredAppointmentsList, financialGroups, charts, chartOptions,
+            currentDate, weekDays, hours, changeWeek, getApptsForDay, getApptStyle, isToday: (d) => d.toDateString() === new Date().toDateString(),
+            modals, apptForm, paymentForm, expenseForm, simpleForm, apptFilter,
+            openApptModal, addBatchItem, updateBatchItemPrice, saveBatchAppointment, batchTotal, updateApptStatus, deleteAppointment,
+            openPaymentModal, addTransaction, deleteTransaction,
+            openClientModal, saveClient, deleteClient, 
+            openServiceModal, saveService, deleteService,
+            saveExpense, openWhatsappReport,
+            clients, services, expenses, formatCurrency, filters, financialTab
+        };
+    }
+});
+
+app.use(window.Vue3Apexcharts);
+app.mount('#app');
+</script>
