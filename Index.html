@@ -5,18 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vitória Camilli Makeup</title>
 
-    <!-- 1. Tailwind CSS -->
+    <!-- Bibliotecas Externas -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Vue.js 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
-    <!-- 3. ApexCharts & Vue Wrapper (Links Corrigidos) -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue3-apexcharts@1.4.1/dist/vue3-apexcharts.js"></script>
     
-    <!-- 4. Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
     <!-- Configuração do Tailwind -->
     <script>
@@ -32,36 +28,13 @@
         }
     </script>
 
-    <!-- Estilos CSS -->
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        /* Utilitários */
-        [v-cloak] { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        
-        /* Transições Vue */
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; }
-        
-        .slide-up-enter-active { transition: all 0.4s ease-out; }
-        .slide-up-leave-active { transition: all 0.2s ease-in; }
-        .slide-up-enter-from { opacity: 0; transform: translateY(20px); }
-        .slide-up-leave-to { opacity: 0; transform: translateY(-10px); }
-
-        .list-move, .list-enter-active, .list-leave-active { transition: all 0.4s ease; }
-        .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(-20px); }
-        .list-leave-active { position: absolute; }
-    </style>
+    <!-- INCLUIR CSS -->
+    <?!= include('CSS'); ?>
 </head>
-<body class="text-slate-800 antialiased">
+<body class="text-slate-800 antialiased bg-slate-50">
 
     <div id="app" v-cloak class="h-screen flex flex-col md:flex-row overflow-hidden">
-
+        
         <!-- LOADING OVERLAY -->
         <transition name="fade">
             <div v-if="loading" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center text-rose-600">
@@ -70,170 +43,169 @@
             </div>
         </transition>
 
-        <!-- BACKDROP MOBILE -->
+        <!-- BACKDROP MOBILE (Para fechar o menu lateral) -->
         <transition name="fade">
-            <div v-if="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm"></div>
+            <div v-if="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"></div>
         </transition>
 
         <!-- SIDEBAR -->
-        <aside :class="['fixed md:static inset-y-0 left-0 z-30 w-64 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out flex flex-col', sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+        <aside :class="['fixed md:static inset-y-0 left-0 z-50 w-72 md:w-64 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl md:shadow-none', sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-rose-50/50">
                 <div>
                     <h1 class="text-xl font-bold text-rose-600 flex items-center gap-2">
-                        <i data-lucide="palette" class="w-6 h-6"></i> Vitória Camilli
+                        <i class="ri-palette-line text-2xl"></i> Vitória Camilli
                     </h1>
-                    <p class="text-xs text-slate-400 font-medium tracking-wider mt-1 pl-8">MAKEUP MANAGER</p>
+                    <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase mt-1 pl-8">Makeup Manager</p>
                 </div>
-                <button @click="sidebarOpen = false" class="md:hidden text-slate-400"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <button @click="sidebarOpen = false" class="md:hidden w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm text-slate-400 hover:text-rose-500 transition-colors border border-slate-100">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
             </div>
 
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
                 <button v-for="item in menuItems" :key="item.id" 
                     @click="setPage(item.id)"
-                    :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 group', 
-                             view === item.id ? 'bg-rose-50 text-rose-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900']">
-                    <i :data-lucide="item.icon" :class="['w-5 h-5 transition-transform', view === item.id ? 'scale-110' : 'group-hover:scale-105']"></i>
+                    :class="['w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 group relative', 
+                             view === item.id ? 'bg-rose-50 text-rose-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900']">
+                    <div v-if="view === item.id" class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-rose-500 rounded-r-full"></div>
+                    <i :class="[item.icon, 'text-xl transition-transform', view === item.id ? 'scale-110' : 'group-hover:scale-110']"></i>
                     {{ item.label }}
                 </button>
             </nav>
 
             <div class="p-4 border-t border-slate-100 bg-slate-50">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-orange-400 flex items-center justify-center text-white font-bold shadow-md">V</div>
-                    <div>
-                        <p class="text-sm font-bold text-slate-900">Vitória Camilli</p>
-                        <p class="text-xs text-slate-500">Conta Profissional</p>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-orange-400 flex items-center justify-center text-white font-bold shadow-md text-sm">VC</div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-bold text-slate-900 truncate">Vitória Camilli</p>
+                        <p class="text-xs text-slate-500 truncate">Profissional</p>
                     </div>
                 </div>
             </div>
         </aside>
 
         <!-- MAIN CONTENT -->
-        <main class="flex-1 flex flex-col h-full relative bg-slate-50">
+        <main class="flex-1 flex flex-col h-full relative w-full">
+            
             <!-- HEADER MOBILE -->
-            <header class="md:hidden bg-white px-4 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+            <header class="md:hidden bg-white px-4 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-30 shadow-sm">
                 <div class="flex items-center gap-3">
-                    <button @click="sidebarOpen = true" class="text-slate-600"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                    <button @click="sidebarOpen = true" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-50 rounded-xl transition-colors border border-slate-100 shadow-sm">
+                        <i class="ri-menu-line text-xl"></i>
+                    </button>
                     <span class="font-bold text-lg text-slate-800">{{ getPageTitle() }}</span>
                 </div>
-                <div class="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-xs">VC</div>
+                <button @click="openApptModal(null)" class="w-10 h-10 bg-rose-600 text-white rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                    <i class="ri-add-line text-xl"></i>
+                </button>
             </header>
 
             <!-- SCROLLABLE CONTENT -->
-            <div class="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar pb-20 md:pb-8">
+            <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 custom-scrollbar pb-24 md:pb-8 relative">
                 
-                <!-- VIEW: DASHBOARD -->
                 <transition name="slide-up" mode="out-in">
+                    
+                    <!-- VIEW: DASHBOARD -->
                     <div v-if="view === 'dashboard'" key="dashboard" class="space-y-6">
-                        <!-- Header Dashboard -->
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div class="hidden md:block">
-                                <h2 class="text-2xl font-bold text-slate-900">Visão Geral</h2>
-                                <p class="text-sm text-slate-500">Resumo financeiro e agendamentos</p>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900 hidden md:block">Visão Geral</h2>
+                                <p class="text-sm text-slate-500 hidden md:block">Bem-vinda de volta!</p>
                             </div>
-                            <div class="flex gap-2 w-full md:w-auto">
-                                <select v-model="filters.period" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-xl focus:ring-rose-500 focus:border-rose-500 block w-full p-2.5">
-                                    <option value="month">Este Mês</option>
-                                    <option value="week">Esta Semana</option>
-                                    <option value="today">Hoje</option>
-                                </select>
-                                <button @click="openApptModal(null)" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-800 shadow-lg flex items-center gap-2 whitespace-nowrap">
-                                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Novo Agendamento</span><span class="sm:hidden">Novo</span>
+                            <div class="w-full md:w-auto flex flex-col md:flex-row gap-2">
+                                <div class="flex gap-2 w-full">
+                                    <select v-model="filters.period" class="flex-1 bg-white border border-slate-300 text-slate-700 text-sm rounded-xl focus:ring-rose-500 focus:border-rose-500 p-2.5 shadow-sm outline-none h-12 md:h-auto">
+                                        <option value="today">Hoje</option>
+                                        <option value="week">Esta Semana</option>
+                                        <option value="month">Este Mês</option>
+                                    </select>
+                                    <button @click="openWhatsappReport" class="flex-none w-12 md:w-10 h-12 md:h-10 flex items-center justify-center bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 shadow-md transition-colors" title="Enviar Resumo">
+                                        <i class="ri-whatsapp-line text-xl"></i>
+                                    </button>
+                                </div>
+                                <button @click="openApptModal(null)" class="hidden md:flex bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 shadow-lg items-center gap-2 whitespace-nowrap transition-transform active:scale-95">
+                                    <i class="ri-add-line text-lg"></i> Novo Agendamento
                                 </button>
                             </div>
                         </div>
 
-                        <!-- KPIs -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <!-- Faturamento -->
-                            <div class="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-2xl shadow-lg shadow-rose-200 text-white relative overflow-hidden">
-                                <i data-lucide="dollar-sign" class="absolute -right-4 -top-4 w-24 h-24 opacity-20 transform rotate-12"></i>
-                                <p class="text-rose-100 text-sm font-medium">Faturamento</p>
-                                <h3 class="text-3xl font-bold mt-1">{{ formatCurrency(dashboardStats.revenue) }}</h3>
+                            <div class="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-2xl shadow-lg shadow-rose-200 text-white relative overflow-hidden group">
+                                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-110 transition-transform"></div>
+                                <div class="absolute right-4 top-4 opacity-50"><i class="ri-money-dollar-circle-line text-3xl"></i></div>
+                                <p class="text-rose-100 text-sm font-medium relative z-10">Faturamento</p>
+                                <h3 class="text-3xl font-bold mt-1 relative z-10">{{ formatCurrency(dashboardStats.revenue) }}</h3>
                             </div>
-                            <!-- Lucro -->
                             <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                                 <div class="flex justify-between items-start mb-2">
                                     <p class="text-slate-500 text-sm font-medium">Lucro Líquido</p>
-                                    <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
+                                    <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center"><i class="ri-funds-line"></i></div>
                                 </div>
                                 <h3 class="text-2xl font-bold text-slate-900">{{ formatCurrency(dashboardStats.profit) }}</h3>
-                                <p class="text-xs text-slate-400 mt-1">Despesas: {{ formatCurrency(dashboardStats.expenses) }}</p>
                             </div>
-                            <!-- Atendimentos -->
                             <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                                 <div class="flex justify-between items-start mb-2">
                                     <p class="text-slate-500 text-sm font-medium">Atendimentos</p>
-                                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="users" class="w-4 h-4"></i></div>
+                                    <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center"><i class="ri-user-smile-line"></i></div>
                                 </div>
                                 <h3 class="text-2xl font-bold text-slate-900">{{ dashboardStats.count }}</h3>
                             </div>
-                            <!-- A Receber -->
                             <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                                 <div class="flex justify-between items-start mb-2">
                                     <p class="text-slate-500 text-sm font-medium">A Receber</p>
-                                    <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="wallet" class="w-4 h-4"></i></div>
+                                    <div class="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center"><i class="ri-wallet-3-line"></i></div>
                                 </div>
                                 <h3 class="text-2xl font-bold text-slate-900">{{ formatCurrency(dashboardStats.pending) }}</h3>
                             </div>
                         </div>
 
-                        <!-- Gráficos -->
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                                <h3 class="font-bold text-slate-800 mb-4">Evolução Diária</h3>
+                            <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                                <h3 class="font-bold text-slate-800 mb-4">Evolução Financeira</h3>
                                 <apexchart type="area" height="300" :options="chartOptions.revenue" :series="charts.revenueSeries"></apexchart>
                             </div>
-                            <div class="lg:col-span-1 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="lg:col-span-1 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                                 <h3 class="font-bold text-slate-800 mb-4">Top Serviços</h3>
                                 <apexchart type="bar" height="300" :options="chartOptions.services" :series="charts.servicesSeries"></apexchart>
                             </div>
                         </div>
                     </div>
-                </transition>
 
-                <!-- VIEW: AGENDA (Calendário) -->
-                <transition name="slide-up" mode="out-in">
-                    <div v-if="view === 'calendar'" key="calendar" class="h-full flex flex-col">
+                    <!-- VIEW: CALENDAR -->
+                    <div v-else-if="view === 'calendar'" key="calendar" class="h-full flex flex-col">
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-2xl font-bold text-slate-900 hidden md:block">Agenda</h2>
-                            <button @click="openApptModal(null)" class="bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg flex items-center gap-2">
-                                <i data-lucide="plus" class="w-4 h-4"></i> Novo Horário
+                            <button @click="openApptModal(null)" class="hidden md:flex bg-rose-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg items-center gap-2 hover:bg-rose-700 transition-colors">
+                                <i class="ri-add-line text-lg"></i> Novo Horário
                             </button>
                         </div>
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1 overflow-hidden flex flex-col min-h-[600px]">
-                            <!-- Calendar Header -->
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1 overflow-hidden flex flex-col min-h-[500px]">
                             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                                <h3 class="font-bold text-lg capitalize text-slate-800">{{ currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'}) }}</h3>
-                                <div class="flex gap-2">
-                                    <button @click="changeWeek(-1)" class="p-2 hover:bg-white hover:shadow-sm rounded-lg"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                                    <button @click="currentDate = new Date()" class="px-3 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-lg">Hoje</button>
-                                    <button @click="changeWeek(1)" class="p-2 hover:bg-white hover:shadow-sm rounded-lg"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                                <h3 class="font-bold text-lg capitalize text-slate-800">{{ currentDate.toLocaleDateString('pt-BR', {month:'long'}) }}</h3>
+                                <div class="flex gap-2 bg-white rounded-xl border border-slate-200 p-1">
+                                    <button @click="changeWeek(-1)" class="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-600"><i class="ri-arrow-left-s-line text-xl"></i></button>
+                                    <button @click="currentDate = new Date()" class="px-3 text-xs font-bold text-rose-600 uppercase tracking-wide hover:bg-rose-50 rounded-lg">Hoje</button>
+                                    <button @click="changeWeek(1)" class="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-600"><i class="ri-arrow-right-s-line text-xl"></i></button>
                                 </div>
                             </div>
-                            <!-- Calendar Body -->
-                            <div class="flex-1 overflow-auto relative custom-scrollbar">
-                                <div class="flex min-w-[800px] md:min-w-full">
-                                    <!-- Time Column -->
-                                    <div class="w-16 border-r bg-slate-50 pt-10 sticky left-0 z-10">
-                                        <div v-for="h in hours" :key="h" class="h-24 text-xs font-medium text-center text-slate-400 -mt-2">{{h}}:00</div>
+                            <div class="flex-1 overflow-auto relative custom-scrollbar bg-slate-50/50">
+                                <div class="flex min-w-[700px] md:min-w-full pb-10">
+                                    <div class="w-16 border-r bg-white pt-10 sticky left-0 z-20 shadow-sm">
+                                        <div v-for="h in hours" :key="h" class="h-24 text-[10px] font-bold text-center text-slate-400 -mt-2 bg-white">{{h}}:00</div>
                                     </div>
-                                    <!-- Days Columns -->
                                     <div class="flex-1 flex">
-                                        <div v-for="day in weekDays" :key="day.toString()" :class="['flex-1 border-r min-w-[100px] relative', isToday(day) ? 'bg-rose-50/30' : '']">
-                                            <div class="h-10 border-b flex flex-col items-center justify-center sticky top-0 bg-white z-10">
-                                                <span class="text-[10px] font-bold uppercase text-slate-500">{{day.toLocaleDateString('pt-BR',{weekday:'short'})}}</span>
-                                                <span :class="['text-sm font-bold', isToday(day) ? 'text-rose-600' : 'text-slate-900']">{{day.getDate()}}</span>
+                                        <div v-for="day in weekDays" :key="day.toString()" :class="['flex-1 border-r min-w-[100px] relative bg-white', isToday(day) ? 'bg-rose-50/20' : '']">
+                                            <div class="h-10 border-b flex flex-col items-center justify-center sticky top-0 bg-white z-10 shadow-sm">
+                                                <span class="text-[9px] font-bold uppercase text-slate-400">{{day.toLocaleDateString('pt-BR',{weekday:'short'})}}</span>
+                                                <span :class="['text-sm font-bold', isToday(day) ? 'text-rose-600 bg-rose-100 w-6 h-6 flex items-center justify-center rounded-full' : 'text-slate-900']">{{day.getDate()}}</span>
                                             </div>
-                                            <!-- Grid Lines -->
-                                            <div v-for="h in hours" :key="h" class="h-24 border-b border-slate-100"></div>
-                                            <!-- Appointments -->
+                                            <div v-for="h in hours" :key="h" class="h-24 border-b border-slate-100/50"></div>
                                             <div v-for="appt in getApptsForDay(day)" :key="appt.id" 
                                                  @click="openApptModal(appt)"
-                                                 :class="['absolute left-1 right-1 rounded-lg border-l-4 p-2 cursor-pointer hover:shadow-md transition-all text-xs overflow-hidden', appt.service.color]"
+                                                 :class="['absolute left-1 right-1 rounded-md border-l-[3px] p-2 cursor-pointer hover:brightness-95 transition-all text-xs overflow-hidden shadow-sm z-10', appt.service.color]"
                                                  :style="getApptStyle(appt)">
-                                                <div class="font-bold truncate">{{ appt.client.name.split(' ')[0] }}</div>
-                                                <div class="opacity-80 truncate">{{ appt.service.name }}</div>
+                                                <div class="font-bold truncate text-[11px]">{{ appt.client.name.split(' ')[0] }}</div>
+                                                <div class="opacity-75 truncate text-[10px]">{{ appt.service.name }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -241,25 +213,87 @@
                             </div>
                         </div>
                     </div>
-                </transition>
 
-                <!-- VIEW: FINANCEIRO -->
-                <transition name="slide-up" mode="out-in">
-                    <div v-if="view === 'financial'" key="financial" class="space-y-6">
-                        <div class="flex justify-between items-center">
-                            <h2 class="text-2xl font-bold text-slate-900">Financeiro</h2>
-                            <div class="bg-white border border-slate-200 p-1 rounded-xl flex">
-                                <button @click="financialTab = 'income'" :class="['px-4 py-2 rounded-lg text-sm font-bold transition-colors', financialTab === 'income' ? 'bg-rose-50 text-rose-600' : 'text-slate-500']">Entradas</button>
-                                <button @click="financialTab = 'expenses'" :class="['px-4 py-2 rounded-lg text-sm font-bold transition-colors', financialTab === 'expenses' ? 'bg-rose-50 text-rose-600' : 'text-slate-500']">Saídas</button>
+                    <!-- VIEW: APPOINTMENTS LIST -->
+                    <div v-else-if="view === 'appointments'" key="appointments" class="space-y-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <h2 class="text-2xl font-bold text-slate-900">Gerenciar Agendamentos</h2>
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <select v-model="apptFilter" class="bg-white border border-slate-300 rounded-xl px-4 py-2 text-sm focus:ring-rose-500 outline-none w-full md:w-auto shadow-sm h-12 md:h-auto">
+                                    <option value="all">Todos</option>
+                                    <option value="scheduled">Agendados</option>
+                                    <option value="completed">Concluídos</option>
+                                    <option value="canceled">Cancelados</option>
+                                </select>
                             </div>
                         </div>
 
-                        <!-- Lista de Entradas -->
-                        <div v-if="financialTab === 'income'" class="space-y-6">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-100">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase">Data</th>
+                                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase">Detalhes</th>
+                                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">Status</th>
+                                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <tr v-for="appt in filteredAppointmentsList" :key="appt.id" class="hover:bg-slate-50 group transition-colors">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-bold text-slate-700">{{ new Date(appt.startTime).toLocaleDateString('pt-BR') }}</div>
+                                                <div class="text-xs text-slate-500 font-medium bg-slate-100 inline-block px-1.5 py-0.5 rounded mt-1">
+                                                    {{ new Date(appt.startTime).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) }}
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-bold text-slate-900">{{ appt.client.name }}</div>
+                                                <div class="text-xs text-slate-500 mt-0.5">{{ appt.service.name }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <span v-if="appt.status === 'completed'" class="bg-green-100 text-green-700 border border-green-200 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Concluído</span>
+                                                <span v-else-if="appt.status === 'canceled'" class="bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Cancelado</span>
+                                                <span v-else class="bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Agendado</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <div class="flex justify-end gap-2">
+                                                    <button v-if="appt.status !== 'completed'" @click="updateApptStatus(appt, 'completed')" class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-green-200 bg-white hover:bg-green-50 text-green-600 text-xs font-bold transition-all shadow-sm" title="Concluir">
+                                                        <i class="ri-check-line text-sm"></i>
+                                                    </button>
+                                                    <button v-if="appt.status !== 'canceled'" @click="updateApptStatus(appt, 'canceled')" class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-600 text-xs font-bold transition-all shadow-sm" title="Cancelar">
+                                                        <i class="ri-close-line text-sm"></i>
+                                                    </button>
+                                                    <button @click="openApptModal(appt)" class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold transition-all shadow-sm" title="Editar">
+                                                        <i class="ri-pencil-line text-sm"></i>
+                                                    </button>
+                                                    <button @click="deleteAppointment(appt.id)" class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-400 hover:text-rose-600 text-xs font-bold transition-all shadow-sm" title="Excluir">
+                                                        <i class="ri-delete-bin-line text-sm"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: FINANCIAL -->
+                    <div v-else-if="view === 'financial'" key="financial" class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold text-slate-900">Financeiro</h2>
+                            <div class="bg-white border border-slate-200 p-1 rounded-xl flex w-full md:w-auto shadow-sm">
+                                <button @click="financialTab = 'income'" :class="['flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all', financialTab === 'income' ? 'bg-rose-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700']">Entradas</button>
+                                <button @click="financialTab = 'expenses'" :class="['flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all', financialTab === 'expenses' ? 'bg-rose-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700']">Saídas</button>
+                            </div>
+                        </div>
+
+                        <div v-if="financialTab === 'income'" class="space-y-4">
                             <div v-for="(group, month) in financialGroups" :key="month" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i> {{ month }}</h3>
-                                    <span class="text-sm font-bold text-slate-900 bg-white px-2 py-1 rounded border">Total: {{ formatCurrency(group.total) }}</span>
+                                <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                    <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm"><i class="ri-calendar-line"></i> {{ month }}</h3>
+                                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">{{ formatCurrency(group.total) }}</span>
                                 </div>
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full divide-y divide-slate-100">
@@ -273,17 +307,18 @@
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-slate-50">
-                                            <tr v-for="appt in group.items" :key="appt.id" class="hover:bg-slate-50">
+                                            <tr v-for="appt in group.items" :key="appt.id" class="hover:bg-slate-50 cursor-pointer" @click="openPaymentModal(appt)">
                                                 <td class="px-4 py-3 text-sm font-medium text-slate-600">{{ new Date(appt.startTime).getDate() }}</td>
-                                                <td class="px-4 py-3 text-sm text-slate-800">{{ appt.client.name }} <div class="text-xs text-slate-400">{{ appt.service.name }}</div></td>
+                                                <td class="px-4 py-3 text-sm text-slate-800">{{ appt.client.name }} <span class="text-xs text-slate-400 block">{{ appt.service.name }}</span></td>
                                                 <td class="px-4 py-3 text-sm text-right font-bold text-slate-700">{{ formatCurrency(appt.price) }}</td>
                                                 <td class="px-4 py-3 text-center">
                                                     <span v-if="appt.paymentStatus === 'paid'" class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Pago</span>
-                                                    <span v-else-if="appt.paymentStatus === 'partial'" class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Parcial</span>
                                                     <span v-else class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Pendente</span>
                                                 </td>
-                                                <td class="px-4 py-3 text-right">
-                                                    <button @click="openPaymentModal(appt)" class="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                                <td class="px-4 py-3 text-right text-slate-400">
+                                                    <button class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-white text-slate-600 text-xs font-bold transition-all shadow-sm ml-auto">
+                                                        <i class="ri-pencil-line"></i> Editar
+                                                    </button>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -292,111 +327,125 @@
                             </div>
                         </div>
 
-                        <!-- Lista de Saídas -->
                         <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
-                                <h3 class="font-bold text-slate-900 mb-4">Registrar Despesa</h3>
+                            <div class="lg:col-span-1 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                                <h3 class="font-bold text-slate-900 mb-4">Nova Despesa</h3>
                                 <form @submit.prevent="saveExpense" class="space-y-3">
-                                    <input v-model="expenseForm.description" placeholder="Descrição" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
+                                    <input v-model="expenseForm.description" placeholder="Descrição" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none h-12">
                                     <div class="grid grid-cols-2 gap-3">
-                                        <input v-model="expenseForm.amount" type="number" placeholder="Valor" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
-                                        <input v-model="expenseForm.date" type="date" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
+                                        <input v-model="expenseForm.amount" type="number" placeholder="Valor" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none h-12">
+                                        <input v-model="expenseForm.date" type="date" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none h-12">
                                     </div>
-                                    <select v-model="expenseForm.category" class="w-full border border-slate-300 p-3 rounded-xl text-sm bg-white focus:ring-2 focus:ring-rose-500 outline-none">
+                                    <select v-model="expenseForm.category" class="w-full border border-slate-300 p-3 rounded-xl text-sm bg-white focus:ring-2 focus:ring-rose-500 outline-none h-12">
                                         <option value="product">Produtos</option>
                                         <option value="rent">Aluguel</option>
                                         <option value="marketing">Marketing</option>
                                         <option value="other">Outros</option>
                                     </select>
-                                    <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 shadow-lg">Salvar</button>
+                                    <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 shadow-lg h-12">Salvar</button>
                                 </form>
                             </div>
                             <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                                 <table class="min-w-full divide-y divide-slate-100">
-                                    <thead class="bg-slate-50"><tr><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase">Data</th><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase">Descrição</th><th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">Valor</th></tr></thead>
+                                    <thead class="bg-slate-50"><tr><th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Data</th><th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Desc.</th><th class="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase">Valor</th></tr></thead>
                                     <tbody class="divide-y divide-slate-100">
                                         <tr v-for="exp in expenses" :key="exp.id" class="hover:bg-slate-50">
-                                            <td class="px-6 py-4 text-sm text-slate-500">{{ new Date(exp.date).toLocaleDateString('pt-BR') }}</td>
-                                            <td class="px-6 py-4 text-sm font-medium text-slate-800">{{ exp.description }} <span class="bg-slate-100 text-slate-500 text-[10px] px-1 rounded ml-1 uppercase">{{ exp.category }}</span></td>
-                                            <td class="px-6 py-4 text-sm font-bold text-rose-600 text-right">- {{ formatCurrency(exp.amount) }}</td>
+                                            <td class="px-4 py-3 text-sm text-slate-500">{{ new Date(exp.date).toLocaleDateString('pt-BR') }}</td>
+                                            <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ exp.description }}</td>
+                                            <td class="px-4 py-3 text-sm font-bold text-rose-600 text-right">- {{ formatCurrency(exp.amount) }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
-                </transition>
 
-                <!-- VIEW: CLIENTES E SERVIÇOS (Tabelas Simples) -->
-                <transition name="slide-up" mode="out-in">
-                    <div v-if="view === 'clients' || view === 'services'" :key="view" class="space-y-6">
-                        <div class="flex justify-between items-center">
+                    <!-- VIEW: CLIENTS AND SERVICES -->
+                    <div v-else-if="view === 'clients' || view === 'services'" :key="view" class="space-y-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <h2 class="text-2xl font-bold text-slate-900 capitalize">{{ view === 'clients' ? 'Clientes' : 'Serviços' }}</h2>
-                            <button @click="view === 'clients' ? openClientModal({}) : openServiceModal({})" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg">
-                                Adicionar
+                            <button @click="view === 'clients' ? openClientModal({}) : openServiceModal({})" class="w-full md:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 transition-colors">
+                                + Adicionar {{ view === 'clients' ? 'Cliente' : 'Serviço' }}
                             </button>
                         </div>
                         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <table class="min-w-full divide-y divide-slate-100">
-                                <tbody class="divide-y divide-slate-100">
-                                    <tr v-for="item in (view === 'clients' ? clients : services)" :key="item.id" class="hover:bg-slate-50">
-                                        <td class="px-6 py-4">
-                                            <div class="font-bold text-slate-800">{{ item.name }}</div>
-                                            <div class="text-xs text-slate-500">{{ view === 'clients' ? item.phone : formatCurrency(item.price) }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 text-right">
-                                            <button @click="view === 'clients' ? openClientModal(item) : openServiceModal(item)" class="text-indigo-600 font-bold text-sm">Editar</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="divide-y divide-slate-100">
+                                <div v-for="item in (view === 'clients' ? clients : services)" :key="item.id" class="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-slate-50 transition-colors group">
+                                    <div @click="view === 'clients' ? openClientModal(item) : openServiceModal(item)" class="flex-1 cursor-pointer w-full">
+                                        <div class="font-bold text-slate-800">{{ item.name }}</div>
+                                        <div class="text-xs text-slate-500 mt-1">{{ view === 'clients' ? item.phone : formatCurrency(item.price) }}</div>
+                                    </div>
+                                    <div class="flex gap-2 mt-3 sm:mt-0 w-full sm:w-auto justify-end">
+                                        <button @click="view === 'clients' ? openClientModal(item) : openServiceModal(item)" class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-white text-slate-600 text-xs font-bold transition-all shadow-sm">
+                                            <i class="ri-pencil-line"></i> Editar
+                                        </button>
+                                        <button @click="view === 'clients' ? deleteClient(item.id) : deleteService(item.id)" class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-500 text-xs font-bold transition-all shadow-sm">
+                                            <i class="ri-delete-bin-line"></i> Excluir
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </transition>
+
+                <!-- FAB MOBILE (Novo Agendamento) -->
+                <button v-if="['dashboard', 'calendar'].includes(view)" @click="openApptModal(null)" class="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-rose-600 text-white rounded-full shadow-xl shadow-rose-300 flex items-center justify-center z-50 active:scale-90 transition-transform">
+                    <i class="ri-add-line text-2xl"></i>
+                </button>
             </div>
         </main>
 
-        <!-- MODAIS -->
-        
-        <!-- Modal Agendamento -->
+        <!-- MODAIS REORGANIZADOS PARA EVITAR CONFLITOS -->
+
+        <!-- Camada 1: Agendamento (z-50) -->
         <transition name="fade">
-            <div v-if="modals.appointment.open" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
-                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div v-if="modals.appointment.open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <!-- Backdrop específico do modal de agendamento -->
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="modals.appointment.open = false"></div>
+                
+                <div class="relative bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl animate-scale-in z-10">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
                         <h3 class="font-bold text-lg text-slate-900">{{ modals.appointment.id ? 'Editar' : 'Novo' }} Agendamento</h3>
-                        <button @click="modals.appointment.open = false" class="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
+                        <button @click="modals.appointment.open = false" class="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 transition-colors">
+                            <i class="ri-close-line text-xl"></i>
+                        </button>
                     </div>
                     <div class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-5">
                         <!-- Cliente Select -->
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">Cliente</label>
                             <div class="flex gap-2">
-                                <select v-model="apptForm.clientId" class="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500 outline-none">
+                                <select v-model="apptForm.clientId" class="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500 outline-none h-12">
                                     <option value="" disabled>Selecione...</option>
                                     <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option>
                                 </select>
-                                <button @click="openClientModal({})" class="bg-rose-50 text-rose-600 px-4 rounded-xl border border-rose-100 hover:bg-rose-100"><i data-lucide="user-plus" class="w-5 h-5"></i></button>
+                                <button @click="openClientModal({})" class="w-12 h-12 flex items-center justify-center bg-rose-50 text-rose-600 rounded-xl border border-rose-100 hover:bg-rose-100 transition-colors">
+                                    <i class="ri-user-add-line text-xl"></i>
+                                </button>
                             </div>
                         </div>
                         <!-- Itens (Batch) -->
                         <div class="space-y-3">
                             <label class="block text-sm font-bold text-slate-700">Serviços</label>
                             <div v-for="(item, idx) in apptForm.batchItems" :key="idx" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 relative group">
-                                <button v-if="apptForm.batchItems.length > 1" @click="apptForm.batchItems.splice(idx, 1)" class="absolute -top-2 -right-2 bg-white text-rose-500 border border-rose-200 rounded-full p-1 shadow-sm"><i data-lucide="x" class="w-3 h-3"></i></button>
+                                <button v-if="apptForm.batchItems.length > 1" @click="apptForm.batchItems.splice(idx, 1)" class="absolute -top-2 -right-2 w-7 h-7 flex items-center justify-center bg-white text-rose-500 border border-rose-200 rounded-full shadow-sm hover:bg-rose-50">
+                                    <i class="ri-close-line"></i>
+                                </button>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                                    <select v-model="item.serviceId" @change="updateBatchItemPrice(item)" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm">
+                                    <select v-model="item.serviceId" @change="updateBatchItemPrice(item)" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none h-12">
                                         <option value="">Serviço...</option>
                                         <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
                                     </select>
-                                    <input type="number" v-model="item.price" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm" placeholder="Valor">
+                                    <input type="number" v-model="item.price" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none h-12" placeholder="Valor">
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <input type="date" v-model="item.date" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm">
-                                    <input type="time" v-model="item.time" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm">
+                                    <input type="date" v-model="item.date" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none h-12">
+                                    <input type="time" v-model="item.time" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none h-12">
                                 </div>
                             </div>
-                            <button v-if="!modals.appointment.id" @click="addBatchItem" class="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 text-sm font-bold hover:border-rose-300 hover:text-rose-500 transition-colors">
-                                + Adicionar Outro Serviço
+                            <button v-if="!modals.appointment.id" @click="addBatchItem" class="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 text-sm font-bold hover:border-rose-300 hover:text-rose-500 transition-colors flex items-center justify-center gap-2 h-12">
+                                <i class="ri-add-line"></i> Adicionar Outro Serviço
                             </button>
                         </div>
                     </div>
@@ -405,85 +454,96 @@
                             <span class="text-slate-600 font-medium">Total Estimado:</span>
                             <span class="text-2xl font-bold text-slate-900">{{ formatCurrency(batchTotal) }}</span>
                         </div>
-                        <button @click="saveBatchAppointment" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800 transform active:scale-95 transition-all">
-                            Confirmar Agendamento
-                        </button>
+                        <div class="flex gap-3">
+                             <button @click="modals.appointment.open = false" class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors h-12">
+                                Cancelar
+                            </button>
+                            <button @click="saveBatchAppointment" class="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transform active:scale-95 transition-all h-12">
+                                Confirmar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </transition>
 
-        <!-- Modal Pagamento -->
+        <!-- Camada 2: Pagamentos e Cadastros Rápidos (z-60 - Acima do agendamento) -->
         <transition name="fade">
-            <div v-if="modals.payment.open" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div v-if="modals.payment.open || modals.client.open || modals.service.open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                
+                <!-- Backdrop Superior -->
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="modals.payment.open = modals.client.open = modals.service.open = false"></div>
+
+                <!-- Modal Pagamento -->
+                <div v-if="modals.payment.open" class="relative bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in z-10">
                     <div class="p-5 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                         <h3 class="font-bold text-lg text-slate-900">Pagamento</h3>
-                        <button @click="modals.payment.open = false"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
+                        <button @click="modals.payment.open = false" class="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 transition-colors">
+                            <i class="ri-close-line text-xl"></i>
+                        </button>
                     </div>
+                    <!-- Conteúdo Pagamento (Mantido) -->
                     <div class="p-6 space-y-6">
                         <div class="grid grid-cols-3 gap-3 text-center">
-                            <div class="bg-slate-50 p-2 rounded-xl border"><p class="text-[10px] uppercase font-bold text-slate-400">Total</p><p class="font-bold">{{ formatCurrency(modals.payment.appt?.price) }}</p></div>
+                            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200"><p class="text-[10px] uppercase font-bold text-slate-400">Total</p><p class="font-bold text-slate-900">{{ formatCurrency(modals.payment.appt?.price) }}</p></div>
                             <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-100"><p class="text-[10px] uppercase font-bold text-emerald-600">Pago</p><p class="font-bold text-emerald-700">{{ formatCurrency(modals.payment.appt?.paidAmount) }}</p></div>
                             <div class="bg-rose-50 p-2 rounded-xl border border-rose-100"><p class="text-[10px] uppercase font-bold text-rose-600">Falta</p><p class="font-bold text-rose-700">{{ formatCurrency(Math.max(0, (modals.payment.appt?.price || 0) - (modals.payment.appt?.paidAmount || 0))) }}</p></div>
                         </div>
-                        
-                        <div>
+                         <div>
                             <h4 class="text-xs font-bold text-slate-400 uppercase mb-2">Histórico</h4>
-                            <div class="bg-slate-50 rounded-xl p-2 max-h-32 overflow-y-auto space-y-2">
-                                <div v-for="tx in (modals.payment.appt?.transactions || [])" :key="tx.id" class="flex justify-between items-center text-sm p-2 bg-white rounded border border-slate-200">
+                            <div class="bg-slate-50 rounded-xl p-2 max-h-32 overflow-y-auto space-y-2 border border-slate-100">
+                                <div v-for="tx in (modals.payment.appt?.transactions || [])" :key="tx.id" class="flex justify-between items-center text-sm p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
                                     <span class="font-bold text-emerald-600">{{ formatCurrency(tx.amount) }}</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs text-slate-400">{{ new Date(tx.date).toLocaleDateString() }}</span>
-                                        <button @click="deleteTransaction(tx.id)" class="text-rose-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                                        <button @click="deleteTransaction(tx.id)" class="text-rose-400 hover:text-rose-600 p-1 hover:bg-rose-50 rounded"><i class="ri-delete-bin-line"></i></button>
                                     </div>
                                 </div>
-                                <div v-if="!modals.payment.appt?.transactions?.length" class="text-center text-xs text-slate-400 py-2">Nenhum pagamento.</div>
+                                <div v-if="!modals.payment.appt?.transactions?.length" class="text-center text-xs text-slate-400 py-4">Nenhum pagamento registrado.</div>
                             </div>
                         </div>
-
-                        <div class="pt-4 border-t border-slate-100">
+                         <div class="pt-4 border-t border-slate-100">
                             <div class="flex gap-2 mb-3">
                                 <div class="flex-1">
                                     <label class="text-[10px] font-bold uppercase text-slate-400">Valor</label>
-                                    <input type="number" v-model="paymentForm.amount" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm">
+                                    <input type="number" v-model="paymentForm.amount" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-10">
                                 </div>
                                 <div class="w-32">
                                     <label class="text-[10px] font-bold uppercase text-slate-400">Data</label>
-                                    <input type="date" v-model="paymentForm.date" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm">
+                                    <input type="date" v-model="paymentForm.date" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-10">
                                 </div>
                             </div>
-                            <button @click="addTransaction" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-700">Registrar Pagamento</button>
+                            <button @click="addTransaction" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-700 transition-colors h-12">Registrar Pagamento</button>
                         </div>
                     </div>
                 </div>
-            </div>
-        </transition>
 
-        <!-- Modais Genéricos (Cliente/Serviço) -->
-        <transition name="fade">
-            <div v-if="modals.client.open || modals.service.open" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+                <!-- Modal Genérico Cliente/Serviço -->
+                <div v-if="modals.client.open || modals.service.open" class="relative bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in z-10">
+                    <button @click="modals.client.open = modals.service.open = false" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                    
                     <h3 class="font-bold text-xl mb-6 text-slate-900">{{ modals.client.open ? 'Cliente' : 'Serviço' }}</h3>
                     
                     <form v-if="modals.client.open" @submit.prevent="saveClient" class="space-y-4">
-                        <input v-model="simpleForm.name" placeholder="Nome" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
-                        <input v-model="simpleForm.phone" placeholder="Telefone" class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
+                        <input v-model="simpleForm.name" placeholder="Nome" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none transition-all h-12">
+                        <input v-model="simpleForm.phone" placeholder="Telefone" class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none transition-all h-12">
                         <div class="flex gap-3 pt-2">
-                            <button type="button" @click="modals.client.open=false" class="flex-1 py-3 bg-slate-100 font-bold text-slate-600 rounded-xl">Cancelar</button>
-                            <button type="submit" class="flex-1 py-3 bg-slate-900 text-white font-bold rounded-xl shadow-lg">Salvar</button>
+                            <button type="button" @click="modals.client.open=false" class="flex-1 py-3 bg-white border border-slate-200 font-bold text-slate-600 rounded-xl hover:bg-slate-50 transition-colors h-12">Cancelar</button>
+                            <button type="submit" class="flex-1 py-3 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 transition-colors h-12">Salvar</button>
                         </div>
                     </form>
 
                     <form v-if="modals.service.open" @submit.prevent="saveService" class="space-y-4">
-                        <input v-model="simpleForm.name" placeholder="Nome" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
+                        <input v-model="simpleForm.name" placeholder="Nome" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none transition-all h-12">
                         <div class="grid grid-cols-2 gap-3">
-                            <input v-model="simpleForm.price" type="number" placeholder="Preço" required class="w-full border border-slate-300 p-3 rounded-xl text-sm">
-                            <input v-model="simpleForm.duration" type="number" placeholder="Minutos" required class="w-full border border-slate-300 p-3 rounded-xl text-sm">
+                            <input v-model="simpleForm.price" type="number" placeholder="Preço" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none transition-all h-12">
+                            <input v-model="simpleForm.duration" type="number" placeholder="Minutos" required class="w-full border border-slate-300 p-3 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none transition-all h-12">
                         </div>
                         <div class="flex gap-3 pt-2">
-                            <button type="button" @click="modals.service.open=false" class="flex-1 py-3 bg-slate-100 font-bold text-slate-600 rounded-xl">Cancelar</button>
-                            <button type="submit" class="flex-1 py-3 bg-slate-900 text-white font-bold rounded-xl shadow-lg">Salvar</button>
+                            <button type="button" @click="modals.service.open=false" class="flex-1 py-3 bg-white border border-slate-200 font-bold text-slate-600 rounded-xl hover:bg-slate-50 transition-colors h-12">Cancelar</button>
+                            <button type="submit" class="flex-1 py-3 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 transition-colors h-12">Salvar</button>
                         </div>
                     </form>
                 </div>
@@ -491,343 +551,9 @@
         </transition>
 
     </div>
+    
+    <!-- INCLUIR JAVASCRIPT -->
+    <?!= include('JS'); ?>
 
-    <!-- LÓGICA VUE -->
-    <script>
-        const { createApp, ref, reactive, computed, onMounted, nextTick, watch } = Vue;
-
-        // --- MOCK API (Simula Google Apps Script) ---
-        // Em produção, isso conecta com o backend real
-        const mockDB = {
-            clientes: [
-                { id: 'c1', name: 'Juliana Paes', phone: '(11) 99999-9999' },
-                { id: 'c2', name: 'Marina Ruy', phone: '(21) 98888-8888' }
-            ],
-            servicos: [
-                { id: 's1', name: 'Maquiagem Social', price: 180, duration: 60, color: 'bg-rose-100 border-rose-200 text-rose-700' },
-                { id: 's2', name: 'Noiva Completa', price: 1200, duration: 180, color: 'bg-purple-100 border-purple-200 text-purple-700' }
-            ],
-            agendamentos: [
-                // Gera alguns agendamentos para o mês atual
-                { 
-                    id: 'a1', clientId: 'c1', serviceId: 's1', 
-                    startTime: new Date().toISOString().split('T')[0] + 'T14:00:00',
-                    price: 180, paidAmount: 0, paymentStatus: 'pending', transactions: []
-                }
-            ],
-            despesas: []
-        };
-
-        // Função wrapper para chamadas Google Script
-        const runGoogle = (fnName, ...args) => {
-            return new Promise((resolve) => {
-                // Simulação local se não estiver no ambiente Google
-                if (typeof google === 'undefined') {
-                    console.log(`[Mock API] Calling ${fnName}`, args);
-                    setTimeout(() => {
-                        if(fnName === 'getData') resolve(mockDB[args[0]] || []);
-                        else if(fnName.startsWith('add')) resolve(args[1]);
-                        else resolve({});
-                    }, 500);
-                } else {
-                    google.script.run.withSuccessHandler(resolve)[fnName](...args);
-                }
-            });
-        };
-
-        const api = {
-            getData: (table) => runGoogle('getData', table),
-            addData: (table, item) => runGoogle('addData', table, item),
-            updateData: (table, id, item) => runGoogle('updateData', table, id, item),
-            deleteData: (table, id) => runGoogle('deleteData', table, id)
-        };
-
-        // --- APP ---
-        const app = createApp({
-            setup() {
-                // Estados
-                const loading = ref(true);
-                const view = ref('dashboard');
-                const sidebarOpen = ref(false);
-                const currentDate = ref(new Date());
-                const filters = reactive({ period: 'month' });
-                const financialTab = ref('income');
-
-                // Dados
-                const clients = ref([]);
-                const services = ref([]);
-                const rawAppts = ref([]);
-                const expenses = ref([]);
-
-                // Forms e Modais
-                const modals = reactive({
-                    appointment: { open: false, id: null },
-                    payment: { open: false, appt: null },
-                    client: { open: false },
-                    service: { open: false }
-                });
-                const apptForm = reactive({ clientId: '', batchItems: [] });
-                const paymentForm = reactive({ amount: '', date: '' });
-                const expenseForm = reactive({ description: '', amount: '', date: '', category: 'product' });
-                const simpleForm = reactive({});
-
-                // Menu
-                const menuItems = [
-                    { id: 'dashboard', icon: 'layout-dashboard', label: 'Visão Geral' },
-                    { id: 'calendar', icon: 'calendar', label: 'Agenda' },
-                    { id: 'financial', icon: 'wallet', label: 'Financeiro' },
-                    { id: 'clients', icon: 'users', label: 'Clientes' },
-                    { id: 'services', icon: 'sparkles', label: 'Serviços' }
-                ];
-
-                // --- COMPUTED ---
-                const fullAppointments = computed(() => {
-                    return rawAppts.value.map(a => ({
-                        ...a,
-                        client: clients.value.find(c => String(c.id) === String(a.clientId)) || { name: '?' },
-                        service: services.value.find(s => String(s.id) === String(a.serviceId)) || { name: '?', price:0, color: 'bg-gray-100', duration:60 }
-                    }));
-                });
-
-                const dashboardStats = computed(() => {
-                    const now = new Date();
-                    let start = new Date();
-                    
-                    if (filters.period === 'month') start = new Date(now.getFullYear(), now.getMonth(), 1);
-                    else if (filters.period === 'week') start.setDate(now.getDate() - 7);
-                    else start.setHours(0,0,0,0); // Today
-
-                    const filtered = fullAppointments.value.filter(a => new Date(a.startTime) >= start);
-                    const revenue = filtered.reduce((acc, c) => acc + Number(c.price), 0);
-                    const expenseTotal = expenses.value.filter(e => new Date(e.date) >= start).reduce((acc, c) => acc + Number(c.amount), 0);
-                    const pending = filtered.reduce((acc, c) => acc + (c.price - c.paidAmount), 0);
-
-                    return { revenue, expenses: expenseTotal, profit: revenue - expenseTotal, count: filtered.length, pending };
-                });
-
-                const financialGroups = computed(() => {
-                    const groups = {};
-                    fullAppointments.value.forEach(a => {
-                        const k = new Date(a.startTime).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-                        if(!groups[k]) groups[k] = { items: [], total: 0 };
-                        groups[k].items.push(a);
-                        groups[k].total += Number(a.price);
-                    });
-                    return groups;
-                });
-
-                const batchTotal = computed(() => apptForm.batchItems.reduce((acc, i) => acc + Number(i.price||0), 0));
-
-                // --- CHARTS CONFIG ---
-                const charts = computed(() => {
-                    const daily = {};
-                    fullAppointments.value.forEach(a => {
-                        const d = a.startTime.split('T')[0];
-                        daily[d] = (daily[d] || 0) + Number(a.price);
-                    });
-                    const sCounts = {};
-                    fullAppointments.value.forEach(a => {
-                        sCounts[a.service.name] = (sCounts[a.service.name] || 0) + 1;
-                    });
-
-                    return {
-                        revenueSeries: [{ name: 'Receita', data: Object.entries(daily).sort().map(([x,y]) => ({x,y})) }],
-                        servicesSeries: [{ name: 'Qtd', data: Object.entries(sCounts).sort((a,b)=>b[1]-a[1]).map(([x,y]) => ({x,y})).slice(0,5) }]
-                    };
-                });
-
-                const chartOptions = {
-                    revenue: { chart: { type: 'area', toolbar:{show:false}, fontFamily:'Inter' }, colors:['#e11d48'], stroke:{curve:'smooth'}, xaxis:{type:'datetime'}, grid:{borderColor:'#f1f5f9'} },
-                    services: { chart: { type: 'bar', toolbar:{show:false}, fontFamily:'Inter' }, colors:['#e11d48'], plotOptions:{bar:{horizontal:true, borderRadius:4}}, grid:{borderColor:'#f1f5f9'} }
-                };
-
-                // --- CALENDAR LOGIC ---
-                const weekDays = computed(() => {
-                    const start = new Date(currentDate.value);
-                    const day = start.getDay();
-                    const diff = start.getDate() - day + (day == 0 ? -6 : 1); 
-                    start.setDate(diff); start.setHours(0,0,0,0);
-                    return Array.from({length:7}, (_, i) => {
-                        const d = new Date(start); d.setDate(d.getDate() + i); return d;
-                    });
-                });
-                const hours = Array.from({length:13}, (_, i) => i + 8); // 08:00 to 20:00
-
-                // --- ACTIONS ---
-                const setPage = (p) => { view.value = p; sidebarOpen.value = false; };
-                const getPageTitle = () => menuItems.find(i => i.id === view.value)?.label;
-                const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-
-                const changeWeek = (dir) => {
-                    const d = new Date(currentDate.value);
-                    d.setDate(d.getDate() + (dir * 7));
-                    currentDate.value = d;
-                };
-
-                const getApptsForDay = (date) => {
-                    return fullAppointments.value.filter(a => {
-                        const d = new Date(a.startTime);
-                        return d.getDate() === date.getDate() && d.getMonth() === date.getMonth();
-                    });
-                };
-
-                const getApptStyle = (appt) => {
-                    const d = new Date(appt.startTime);
-                    const startMin = (d.getHours() - 8) * 60 + d.getMinutes();
-                    // 1 hour = 96px height (approx 24px per 15 min block in CSS, here using 96px/h)
-                    // Adjusted for h-24 class (96px)
-                    const top = (startMin / 60) * 96;
-                    const height = (appt.service.duration / 60) * 96;
-                    return { top: `${top}px`, height: `${height}px` };
-                };
-
-                // CRUD
-                const openApptModal = (appt) => {
-                    modals.appointment.open = true; modals.appointment.id = appt?.id;
-                    apptForm.clientId = appt?.clientId || '';
-                    if(appt) {
-                        const d = new Date(appt.startTime);
-                        apptForm.batchItems = [{
-                            serviceId: appt.serviceId, price: appt.price,
-                            date: d.toISOString().split('T')[0],
-                            time: d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
-                        }];
-                    } else {
-                        apptForm.batchItems = [{ serviceId:'', price:'', date: new Date().toISOString().split('T')[0], time: '09:00' }];
-                    }
-                };
-
-                const addBatchItem = () => apptForm.batchItems.push({ serviceId:'', price:'', date: new Date().toISOString().split('T')[0], time: '09:00' });
-                
-                const updateBatchItemPrice = (item) => {
-                    const s = services.value.find(x => x.id === item.serviceId);
-                    if(s) item.price = s.price;
-                };
-
-                const saveBatchAppointment = async () => {
-                    const promises = apptForm.batchItems.map((item, idx) => {
-                        const s = services.value.find(x => x.id === item.serviceId);
-                        if(!s) return null;
-                        const start = `${item.date}T${item.time}`;
-                        const payload = {
-                            id: modals.appointment.id || `appt-${Date.now()}-${idx}`,
-                            clientId: apptForm.clientId, serviceId: item.serviceId,
-                            startTime: new Date(start).toISOString(),
-                            price: item.price, paidAmount: 0, paymentStatus: 'pending', transactions: []
-                        };
-                        
-                        if(modals.appointment.id) {
-                            const i = rawAppts.value.findIndex(x => x.id === payload.id);
-                            if(i!==-1) rawAppts.value[i] = payload;
-                        } else {
-                            rawAppts.value.push(payload);
-                        }
-                        return api.addData('agendamentos', payload); // Simplificação
-                    });
-                    await Promise.all(promises);
-                    modals.appointment.open = false;
-                };
-
-                // Payment Logic
-                const openPaymentModal = (appt) => {
-                    modals.payment.open = true; modals.payment.appt = appt;
-                    paymentForm.amount = ''; paymentForm.date = new Date().toISOString().split('T')[0];
-                };
-
-                const addTransaction = async () => {
-                    const appt = modals.payment.appt;
-                    const amount = Number(paymentForm.amount);
-                    if(!amount) return;
-
-                    const tx = { id: `tx-${Date.now()}`, amount, date: paymentForm.date };
-                    const newTxs = [...(appt.transactions || []), tx];
-                    const paid = newTxs.reduce((sum, t) => sum + Number(t.amount), 0);
-                    
-                    const updated = { 
-                        ...appt, transactions: newTxs, paidAmount: paid,
-                        paymentStatus: paid >= appt.price ? 'paid' : 'partial'
-                    };
-
-                    const idx = rawAppts.value.findIndex(a => a.id === appt.id);
-                    if(idx !== -1) rawAppts.value[idx] = updated;
-                    
-                    await api.updateData('agendamentos', appt.id, updated);
-                    modals.payment.appt = updated;
-                    paymentForm.amount = '';
-                };
-
-                const deleteTransaction = async (txId) => {
-                    const appt = modals.payment.appt;
-                    const newTxs = appt.transactions.filter(t => t.id !== txId);
-                    const paid = newTxs.reduce((sum, t) => sum + Number(t.amount), 0);
-                    
-                    const updated = { 
-                        ...appt, transactions: newTxs, paidAmount: paid,
-                        paymentStatus: paid >= appt.price ? 'paid' : paid > 0 ? 'partial' : 'pending'
-                    };
-                    
-                    const idx = rawAppts.value.findIndex(a => a.id === appt.id);
-                    if(idx !== -1) rawAppts.value[idx] = updated;
-                    
-                    await api.updateData('agendamentos', appt.id, updated);
-                    modals.payment.appt = updated;
-                };
-
-                // Simples CRUDs
-                const openClientModal = (c) => { modals.client.open = true; Object.assign(simpleForm, c.id ? c : {name:'', phone:''}); simpleForm.id = c.id; };
-                const saveClient = async () => {
-                    const p = { ...simpleForm, id: simpleForm.id || `c-${Date.now()}` };
-                    const i = clients.value.findIndex(x => x.id === p.id);
-                    if(i!==-1) clients.value[i] = p; else clients.value.push(p);
-                    modals.client.open = false;
-                };
-
-                const openServiceModal = (s) => { modals.service.open = true; Object.assign(simpleForm, s.id ? s : {name:'', price:'', duration:60}); simpleForm.id = s.id; };
-                const saveService = async () => {
-                    const colors = ['bg-rose-100 border-rose-200 text-rose-700', 'bg-purple-100 border-purple-200 text-purple-700'];
-                    const p = { ...simpleForm, id: simpleForm.id || `s-${Date.now()}`, color: s.color || colors[Math.floor(Math.random()*colors.length)] };
-                    const i = services.value.findIndex(x => x.id === p.id);
-                    if(i!==-1) services.value[i] = p; else services.value.push(p);
-                    modals.service.open = false;
-                };
-
-                const saveExpense = async () => {
-                    const p = { ...expenseForm, id: `e-${Date.now()}` };
-                    expenses.value.push(p);
-                    expenseForm.description = ''; expenseForm.amount = '';
-                };
-
-                // Init
-                onMounted(async () => {
-                    try {
-                        const [c, s, a, e] = await Promise.all([
-                            api.getData('clientes'), api.getData('servicos'), api.getData('agendamentos'), api.getData('despesas')
-                        ]);
-                        clients.value = c; services.value = s; rawAppts.value = a; expenses.value = e;
-                    } catch(err) { console.error(err); } 
-                    finally { loading.value = false; }
-                });
-
-                watch([view, sidebarOpen, modals], () => {
-                    nextTick(() => window.lucide?.createIcons());
-                }, { deep: true });
-
-                return {
-                    loading, view, sidebarOpen, setPage, getPageTitle, menuItems,
-                    dashboardStats, fullAppointments, financialGroups, charts, chartOptions,
-                    currentDate, weekDays, hours, changeWeek, getApptsForDay, getApptStyle, isToday: (d) => d.toDateString() === new Date().toDateString(),
-                    modals, apptForm, paymentForm, expenseForm, simpleForm,
-                    openApptModal, addBatchItem, updateBatchItemPrice, saveBatchAppointment, batchTotal,
-                    openPaymentModal, addTransaction, deleteTransaction,
-                    openClientModal, saveClient, openServiceModal, saveService, saveExpense,
-                    clients, services, expenses, formatCurrency, filters, financialTab
-                };
-            }
-        });
-
-        // Registrar Plugins
-        app.use(window.Vue3Apexcharts);
-        app.mount('#app');
-    </script>
 </body>
 </html>
